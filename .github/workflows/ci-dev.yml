@@ -28,28 +28,13 @@ jobs:
       - name: Lint CSS
         run: stylelint "*.css"
 
-      - name: Install Parcel
-        run: npm install -g parcel
-
-      - name: Build with Parcel
-        run: parcel build index.html --no-source-maps --dist-dir dist
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista-cicd:dev-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista-cicd:dev-${{ github.sha }}
-
-      - name: Push Docker Image
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
