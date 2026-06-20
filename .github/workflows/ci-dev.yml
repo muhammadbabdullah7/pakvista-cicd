@@ -1,0 +1,59 @@
+name: CI - Development
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install HTMLHint
+        run: npm install -g htmlhint
+
+      - name: Lint HTML
+        run: htmlhint "*.html"
+
+      - name: Install Stylelint
+        run: npm install -g stylelint stylelint-config-standard
+
+      - name: Create Stylelint Config
+        run: echo '{"extends":["stylelint-config-standard"]}' > .stylelintrc.json
+
+      - name: Lint CSS
+        run: stylelint "*.css"
+
+      - name: Install Parcel
+        run: npm install -g parcel
+
+      - name: Build with Parcel
+        run: parcel build index.html --no-source-maps --dist-dir dist
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista-cicd:dev-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista-cicd:dev-${{ github.sha }}
+
+      - name: Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista-cicd:dev-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/pakvista-cicd:dev-${{ github.sha }}
